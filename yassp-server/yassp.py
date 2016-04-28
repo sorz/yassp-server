@@ -1,4 +1,6 @@
+import time
 import requests
+from threading import Thread
 from urllib.parse import urljoin
 
 
@@ -28,6 +30,15 @@ class YaSSP():
     def get_all_profiles(self):
         return self._get('profiles/all/')
 
+    def listen_changes(self, callback):
+        """Once changes on profiles are detected, invoke callback(new_profiles).
+        """
+        # Currently, we just fetch all profiles every 5 minutes.
+        def thread():
+            while True:
+                time.sleep(60 * 5)
+                callback(self.get_all_profiles())
+        Thread(target=thread, daemon=True).run()
 
 class AuthenticationError(Exception):
     pass

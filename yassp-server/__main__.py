@@ -3,7 +3,8 @@ import time
 import logging
 from argparse import ArgumentParser
 
-from .manager import Manager, Server
+from ssmanager import Manager, Server
+from .yassp import YaSSP
 
 
 def get_args():
@@ -25,13 +26,14 @@ def main():
     logging.basicConfig(level=args.log_level,
                         format='%(asctime)s %(levelname)-s: %(message)s')
     manager = Manager(ss_bin=args.ss_bin, print_ss_log=args.print_ss_log)
+
+    yassp = YaSSP('http://localhost:8000/', 'Localhost', 'TEST123')
+    print(yassp.get_all_profiles())
+    return
+
     try:
         manager.start()
-        server = Server(5123, 'test', 'chacha20')
-        servers = [server, Server(5124, 'test', 'chacha20'),
-                   Server(5123, 'test', 'chacha20')]
-        manager.add(server)
-        time.sleep(5)
+        
         manager.update(servers)
         manager._stat_thread.join()
     except KeyboardInterrupt:

@@ -1,33 +1,36 @@
 #!/usr/bin/env python3
+import os
+import sys
 import time
 import logging
-from argparse import ArgumentParser
+from os.path import isfile
+from configparser import ConfigParser
 
 from ssmanager import Manager, Server
 from .yassp import YaSSP
 
 
-def get_args():
-    parser = ArgumentParser(description='YaSSP-Server')
-    parser.add_argument('-S', '--ss-bin',
-                        default='/usr/bin/ss-server',
-                        metavar='PATH-TO-SS-SERVER')
-    parser.add_argument('-P', '--print-ss-log',
-                        action='store_true')
-    parser.add_argument('-v', '--log-level',
-			default=logging.INFO, type=int,
-			metavar='LOG-LEVEL',
-			help="1 to 50. Default 20, debug 10, verbose 5.")
-    return parser.parse_args()
+def get_config():
+    if len(sys.argv) != 2:
+        print('Usage:\n\t%s <PATH-TO-CONFIG-FILE>' % sys.argv[0])
+        sys.exit(1)
+    path = sys.argv[1]
+    if not isfile(path):
+        print('Error: config file "%s" not exist.' % path)
+        sys.exit(1)
+    config = ConfigParser()
+    config.read(path)
+    return config['DEFAULT']
 
 
 def main():
-    args = get_args()
-    logging.basicConfig(level=args.log_level,
+    conf = get_config()
+    logging.basicConfig(level=conf.getint('log level'),
                         format='%(asctime)s %(levelname)-s: %(message)s')
-    manager = Manager(ss_bin=args.ss_bin, print_ss_log=args.print_ss_log)
+    manager = Manager(ss_bin=conf['ss-server path'],
+                      print_ss_log=conf.getboolean('ss-server print log'))
 
-    yassp = YaSSP('http://localhost:8000/', 'Localhost', 'TEST123')
+    yassp = YaSSP(conf['yassp url'], conf['yassp hostname'], conf['yassp psk'])
     print(yassp.get_all_profiles())
     return
 

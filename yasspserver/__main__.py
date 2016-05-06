@@ -30,15 +30,11 @@ def main():
     manager = Manager(ss_bin=conf['ss-server path'],
                       print_ss_log=conf.getboolean('ss-server print log'))
 
-    yassp = YaSSP(conf['yassp url'], conf['yassp hostname'], conf['yassp psk'])
-    print(yassp.get_all_profiles())
-    return
+    yassp = YaSSP(conf['yassp url'], conf['yassp hostname'], conf['yassp psk'], manager)
 
     try:
-        manager.start()
-        
-        manager.update(servers)
-        manager._stat_thread.join()
+        yassp.start()
+        yassp._listen_thread.join()
     except KeyboardInterrupt:
         logging.info('Stopped by ^C.')
     finally:

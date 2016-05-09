@@ -1,7 +1,9 @@
 import time
+import json
 import logging
 import requests
 from threading import Thread
+from collections import defaultdict
 from urllib.parse import urljoin
 
 from ssmanager import Server
@@ -11,6 +13,10 @@ TRAFFIC_CHECK_PERIOD = 30
 
 class YaSSP():
     _running = False
+    _synced_traffic = defaultdict(lambda: 0)
+    _last_active_time = {}
+    traffic_sync_threshold = 100 * 1024 * 1024  # 100 MiB
+    traffic_sync_timeout = 60 * 30  # 30 mins
 
     def __init__(self, url_prefix, hostname, psk, manager):
         self._url_prefix = url_prefix
@@ -53,14 +59,31 @@ class YaSSP():
         profiles = self._get('profiles/all/')
         logging.debug('Syncing %s profiles...' % len(profiles))
         for profile in profiles:
-            pid = profile.pop('pid')
             server = Server(**profile)
-            server.pid = pid
         self._manager.update(servers)
 
     def update_traffic(self):
-        pid_traffic = 'TODO'  # TODO
-        self._post('traffic/update/', data=json.dumps(pid_traffic))
+        stat = self._manager.stat()
+        to_upload = {}
+        for port, traffic in stat:
+            increment = traffic - self._synced_traffic[port]
+            if increment == 0:
+                continue
+            if increment < 0:
+                self._synced_traffic[port] = 0
+                increment = traffic
+
+            if time.time() - self._last_active_time.get(port, 0) > self.traffic_sync_threshold \
+               or increment >= self.traffic_sync_threshold:
+                to_upload[port] = increment
+                # TODO: only update synced traffic after request sent successfully.
+                self._synced_traffic[port] = traffic
+
+            self._last_active_time[port] = time.time()
+
+        if to_upload:
+            logging.debug('Uploading traffic (%d/%d)...' % (len(to_upload), len(stat)))
+            self._post('traffics/update/', data=json.dumps(to_upload))
 
     def _listen_profile_changes(self):
         # Currently, we just fetch all profiles every 5 minutes.
@@ -70,7 +93,7 @@ class YaSSP():
 
     def _traffic_timer(self):
         while self._running:
-            time.sleep(TRAFFIC_CHECK_PERIOD)
+            time.sleep(min(TRAFFIC_CHECK_PERIOD, self.traffic_sync_timeout))
             self.update_traffic()
 
 

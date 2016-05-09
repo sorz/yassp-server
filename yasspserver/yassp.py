@@ -29,11 +29,13 @@ class YaSSP():
                    auth=(self._hostname, self._psk),
                    **kwargs)
         if req.status_code == 403:
-            raise AuthenticationError
+            raise AuthenticationError()
         elif req.status_code == 200:
             return req.json()
+        elif req.status_code == 204:
+            return
         else:
-            raise UnexpectedResponseError
+            raise UnexpectedResponseError()
 
     def _get(self, *args, **kwargs):
         return self._request(requests.get, *args, **kwargs)
@@ -62,7 +64,7 @@ class YaSSP():
     def update_traffic(self):
         stat = self._manager.stat()
         to_upload = {}
-        for port, traffic in stat:
+        for port, traffic in stat.items():
             increment = traffic - self._synced_traffic[port]
             if increment == 0:
                 continue

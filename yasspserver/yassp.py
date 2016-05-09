@@ -55,12 +55,9 @@ class YaSSP():
         self._manager.shutdown()
 
     def update_profiles(self):
-        servers = []
         profiles = self._get('profiles/all/')
         logging.debug('Syncing %s profiles...' % len(profiles))
-        for profile in profiles:
-            server = Server(**profile)
-        self._manager.update(servers)
+        self._manager.update(Server(**p) for p in profiles)
 
     def update_traffic(self):
         stat = self._manager.stat()

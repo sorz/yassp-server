@@ -12,13 +12,14 @@ from ssmanager import Server
 TRAFFIC_CHECK_PERIOD = 30
 
 class YaSSP():
-    _running = False
-    _synced_traffic = defaultdict(lambda: 0)
-    _last_active_time = {}
     traffic_sync_threshold = 100 * 1024 * 1024  # 100 MiB
     traffic_sync_timeout = 60 * 30  # 30 mins
 
     def __init__(self, url_prefix, hostname, psk, manager):
+        self._running = False
+        self._synced_traffic = defaultdict(lambda: 0)
+        self._last_active_time = {}
+
         self._url_prefix = url_prefix
         self._hostname = hostname
         self._psk = psk

@@ -2,6 +2,7 @@ import time
 import json
 import logging
 import requests
+from requests.exceptions import RequestException
 from threading import Thread
 from collections import defaultdict
 from urllib.parse import urljoin
@@ -76,14 +77,18 @@ class YaSSP():
             if time.time() - self._last_active_time.get(port, 0) > self.traffic_sync_threshold \
                or increment >= self.traffic_sync_threshold:
                 to_upload[port] = increment
-                # TODO: only update synced traffic after request sent successfully.
-                self._synced_traffic[port] = traffic
 
             self._last_active_time[port] = time.time()
 
         if to_upload:
             logging.debug('Uploading traffic (%d/%d)...' % (len(to_upload), len(stat)))
-            self._post('traffics/update/', data=json.dumps(to_upload))
+            try:
+                self._post('traffics/update/', data=json.dumps(to_upload))
+            except (RequestException, AuthenticationError, UnexpectedResponseError) as e:
+                logging.warning('Error on upload traffic: %s' % e)
+            else:
+                for port, __ in to_upload.items():
+                    self._synced_traffic[port] = traffic
 
     def _listen_profile_changes(self):
         # Currently, we just fetch all profiles every 5 minutes.

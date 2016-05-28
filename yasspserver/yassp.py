@@ -28,7 +28,7 @@ class YaSSP():
 
     def _request(self, func, path, **kwargs):
         req = func(urljoin(self._url_prefix, path),
-                   auth=(self._hostname, self._psk),
+                   params=dict(token=self._psk),
                    **kwargs)
         if req.status_code == 403:
             raise AuthenticationError()
@@ -59,9 +59,12 @@ class YaSSP():
         self._manager.shutdown()
 
     def update_profiles(self):
-        profiles = self._get('profiles/all/')
+        profiles = self._get('list')
         logging.debug('Syncing %s profiles...' % len(profiles))
-        self._manager.update(Server(**p) for p in profiles)
+        servers = (Server(port=int(p['port']), password=p['passwd'],
+                          method=p['method'], ota=p['ota']=='1')
+                   for p in profiles)
+        self._manager.update(servers)
 
     def update_traffic(self):
         stat = self._manager.stat()
@@ -83,7 +86,7 @@ class YaSSP():
         if to_upload:
             logging.debug('Uploading traffic (%d/%d)...' % (len(to_upload), len(stat)))
             try:
-                self._post('traffics/update/', data=json.dumps(to_upload))
+                self._post('update', data=json.dumps(to_upload))
             except (RequestException, AuthenticationError, UnexpectedResponseError) as e:
                 logging.warning('Error on upload traffic: %s' % e)
             else:

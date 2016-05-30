@@ -86,7 +86,10 @@ class YaSSP():
         if to_upload:
             logging.debug('Uploading traffic (%d/%d)...' % (len(to_upload), len(stat)))
             try:
-                self._post('update', data=json.dumps(to_upload))
+                to_post = {'update': list(dict(port=p, transfer=t) for p, t in to_upload.items())}
+                resp = self._post('updates', data=json.dumps(to_post))
+                if resp.get('code') != 200:
+                    raise UnexpectedResponseError('Code returned by server %s != 200.' % resp.get(200))
             except (RequestException, AuthenticationError, UnexpectedResponseError) as e:
                 logging.warning('Error on upload traffic: %s' % e)
             else:

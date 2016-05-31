@@ -2,7 +2,7 @@ import time
 import json
 import logging
 import requests
-from requests.exceptions import RequestException
+from requests.exceptions import RequestException, ConnectionError
 from threading import Thread
 from collections import defaultdict
 from urllib.parse import urljoin
@@ -59,7 +59,10 @@ class YaSSP():
         self._manager.shutdown()
 
     def update_profiles(self):
-        profiles = self._get('list')
+        try:
+            profiles = self._get('list')
+        except (RequestException, AuthenticationError, UnexpectedResponseError, ConnectionError) as e:
+            logging.warning('Error on update profiles: %s' % e)
         logging.debug('Syncing %s profiles...' % len(profiles))
         servers = (Server(port=int(p['port']), password=p['passwd'],
                           method=p['method'], ota=p['ota']=='1')
@@ -90,7 +93,7 @@ class YaSSP():
                 resp = self._post('updates', data=json.dumps(to_post))
                 if resp.get('code') != 200:
                     raise UnexpectedResponseError('Code returned by server %s != 200.' % resp.get(200))
-            except (RequestException, AuthenticationError, UnexpectedResponseError) as e:
+            except (RequestException, AuthenticationError, UnexpectedResponseError, ConnectionError) as e:
                 logging.warning('Error on upload traffic: %s' % e)
             else:
                 for port, __ in to_upload.items():

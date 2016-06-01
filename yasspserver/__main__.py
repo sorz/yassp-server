@@ -8,6 +8,7 @@ from configparser import ConfigParser
 
 from ssmanager import Manager, Server
 from .yassp import YaSSP
+from . import pushserver
 
 
 def get_config():
@@ -34,7 +35,12 @@ def main():
 
     try:
         yassp.start()
-        yassp._listen_thread.join()
+        if conf.getboolean('push server enable'):
+            pushserver.run(manager, conf['push token'],
+                           host=conf['push bind address'],
+                           port=conf.getint('push bind port'))
+        else:
+            yassp._listen_thread.join()
     except KeyboardInterrupt:
         logging.info('Stopped by ^C.')
     finally:

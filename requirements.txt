@@ -1,2 +1,3 @@
 git+https://github.com/sorz/ssmanager.git
 requests
+bottle

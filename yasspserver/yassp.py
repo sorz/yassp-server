@@ -7,7 +7,7 @@ from threading import Thread
 from collections import defaultdict
 from urllib.parse import urljoin
 
-from ssmanager import Server
+from .utils import parse_servers
 
 
 TRAFFIC_CHECK_PERIOD = 30
@@ -63,11 +63,8 @@ class YaSSP():
             profiles = self._get('list')
         except (RequestException, AuthenticationError, UnexpectedResponseError, ConnectionError) as e:
             logging.warning('Error on update profiles: %s' % e)
-        logging.debug('Syncing %s profiles...' % len(profiles))
-        servers = (Server(port=int(p['port']), password=p['passwd'],
-                          method=p['method'], ota=p['ota']=='1')
-                   for p in profiles)
-        self._manager.update(servers)
+        logging.debug('Syncing %s profiles (pull)...' % len(profiles))
+        self._manager.update(parse_servers(profiles))
 
     def update_traffic(self):
         stat = self._manager.stat()
@@ -100,9 +97,9 @@ class YaSSP():
                     self._synced_traffic[port] = traffic
 
     def _listen_profile_changes(self):
-        # Currently, we just fetch all profiles every 5 minutes.
+        # Currently, we just fetch all profiles every 15 minutes.
         while self._running:
-            time.sleep(60 * 5)
+            time.sleep(60 * 15)
             self.update_profiles()
 
     def _traffic_timer(self):

@@ -1,4 +1,4 @@
-from bottle import get, post, request, abort
+from bottle import get, post, request, abort, response
 from io import TextIOWrapper
 import bottle
 import json
@@ -21,8 +21,10 @@ def home():
 @post('/instances')
 def update_instances():
     _check_token()
+    profiles = json.load(TextIOWrapper(request.body))
     logging.debug('Syncing %s profiles (push)...' % len(profiles))
     manager.update(parse_servers(profiles))
+    response.status = 204
 
 def run(ssmanager, key, *args, **kwargs):
     global token, manager

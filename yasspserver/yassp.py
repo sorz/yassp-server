@@ -46,7 +46,6 @@ class YaSSP():
         return self._request(requests.post, *args, **kwargs)
 
     def start(self):
-        self._manager.start()
         self._listen_thread = Thread(target=self._listen_profile_changes, daemon=True)
         self._traffic_thread = Thread(target=self._traffic_timer, daemon=True)
         self._running = True
@@ -56,7 +55,6 @@ class YaSSP():
 
     def stop(self):
         self._running = False
-        self._manager.shutdown()
 
     def update_profiles(self):
         try:

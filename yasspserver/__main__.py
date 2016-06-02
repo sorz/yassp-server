@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+import signal
 import logging
 from os.path import isfile
 from configparser import ConfigParser
@@ -23,6 +24,9 @@ def get_config():
     config.read(path)
     return config['DEFAULT']
 
+def exit(signalnum, frame):
+    logging.info('Stopping by SIGTERM/SIGHUP.')
+    sys.exit()
 
 def main():
     conf = get_config()
@@ -32,8 +36,11 @@ def main():
                       print_ss_log=conf.getboolean('ss-server print log'))
 
     yassp = YaSSP(conf['yassp url'], conf['yassp hostname'], conf['yassp psk'], manager)
+    signal.signal(signal.SIGTERM, exit)
+    signal.signal(signal.SIGHUP, exit)
 
     try:
+        manager.start()
         yassp.start()
         if conf.getboolean('push server enable'):
             pushserver.run(manager, conf['push token'],
@@ -42,10 +49,11 @@ def main():
         else:
             yassp._listen_thread.join()
     except KeyboardInterrupt:
-        logging.info('Stopped by ^C.')
+        logging.info('Stopping by ^C.')
     finally:
+        yassp.stop()
         manager.stop()
-
+        logging.info('Exited.')
 
 if __name__ == '__main__':
     main()

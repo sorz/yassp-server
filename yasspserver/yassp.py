@@ -55,6 +55,7 @@ class YaSSP():
 
     def stop(self):
         self._running = False
+        self.update_traffic(force_all=True)
 
     def update_profiles(self):
         try:
@@ -64,7 +65,7 @@ class YaSSP():
         logging.debug('Syncing %s profiles (pull)...' % len(profiles))
         self._manager.update(parse_servers(profiles))
 
-    def update_traffic(self):
+    def update_traffic(self, force_all=False):
         stat = self._manager.stat()
         to_upload = {}
         for port, traffic in stat.items():
@@ -76,7 +77,8 @@ class YaSSP():
                 increment = traffic
 
             if time.time() - self._last_active_time.get(port, 0) > self.traffic_sync_threshold \
-               or increment >= self.traffic_sync_threshold:
+               or increment >= self.traffic_sync_threshold \
+               or force_all:
                 to_upload[port] = increment
 
             self._last_active_time[port] = time.time()
@@ -95,10 +97,12 @@ class YaSSP():
                     self._synced_traffic[port] = traffic
 
     def _listen_profile_changes(self):
-        # Currently, we just fetch all profiles every 15 minutes.
+        # Currently, we just fetch all profiles every 20 minutes.
+        timeout = 60 * 15
+        time.sleep(timeout)
         while self._running:
-            time.sleep(60 * 15)
             self.update_profiles()
+            time.sleep(timeout)
 
     def _traffic_timer(self):
         while self._running:

@@ -9,7 +9,7 @@ from configparser import ConfigParser
 
 from ssmanager import Manager, Server
 from .yassp import YaSSP
-from . import pushserver
+from . import pushserver, utils
 
 
 def get_config():
@@ -32,6 +32,7 @@ def main():
     conf = get_config()
     logging.basicConfig(level=conf.getint('log level'),
                         format='%(asctime)s %(levelname)-s: %(message)s')
+    utils.ss_bind_address = conf['ss-server bind']
     manager = Manager(ss_bin=conf['ss-server path'],
                       print_ss_log=conf.getboolean('ss-server print log'))
 

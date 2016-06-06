@@ -27,8 +27,10 @@ class YaSSP():
         self._manager = manager
 
     def _request(self, func, path, **kwargs):
+        params = kwargs.pop('params', {})
+        params['token'] = self._psk
         req = func(urljoin(self._url_prefix, path),
-                   params=dict(token=self._psk),
+                   params=params,
                    **kwargs)
         if req.status_code == 403:
             raise AuthenticationError()
@@ -59,9 +61,10 @@ class YaSSP():
 
     def update_profiles(self):
         try:
-            profiles = self._get('list')
+            profiles = self._get('getport.php', params=dict(act='list'))
         except (RequestException, AuthenticationError, UnexpectedResponseError, ConnectionError) as e:
             logging.warning('Error on update profiles: %s' % e)
+            return
         logging.debug('Syncing %s profiles (pull)...' % len(profiles))
         self._manager.update(parse_servers(profiles))
 
@@ -87,7 +90,7 @@ class YaSSP():
             logging.debug('Uploading traffic (%d/%d)...' % (len(to_upload), len(stat)))
             try:
                 to_post = {'update': list(dict(port=p, transfer=t) for p, t in to_upload.items())}
-                resp = self._post('updates', data=json.dumps(to_post))
+                resp = self._post('getport.php', params=dict(act='updates'), data=json.dumps(to_post))
                 if resp.get('code') != 200:
                     raise UnexpectedResponseError('Code returned by server %s != 200.' % resp.get(200))
             except (RequestException, AuthenticationError, UnexpectedResponseError, ConnectionError) as e:
@@ -97,8 +100,8 @@ class YaSSP():
                     self._synced_traffic[port] = traffic
 
     def _listen_profile_changes(self):
-        # Currently, we just fetch all profiles every 20 minutes.
-        timeout = 60 * 15
+        # Currently, we just fetch all profiles every 1 minutes.
+        timeout = 60 * 1
         time.sleep(timeout)
         while self._running:
             self.update_profiles()

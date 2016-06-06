@@ -87,17 +87,18 @@ class YaSSP():
             self._last_active_time[port] = time.time()
 
         if to_upload:
-            logging.debug('Uploading traffic (%d/%d)...' % (len(to_upload), len(stat)))
+            logging.debug('Uploading traffic (%d)...' % len(to_upload))
             try:
                 to_post = {'update': list(dict(port=p, transfer=t) for p, t in to_upload.items())}
                 resp = self._post('getport.php', params=dict(act='updates'), data=json.dumps(to_post))
                 if resp.get('code') != 200:
-                    raise UnexpectedResponseError('Code returned by server %s != 200.' % resp.get(200))
+                    logging.debug(resp)
+                    raise UnexpectedResponseError('Code returned by server %s != 200.' % resp.get('code'))
             except (RequestException, AuthenticationError, UnexpectedResponseError, ConnectionError) as e:
                 logging.warning('Error on upload traffic: %s' % e)
             else:
                 for port, __ in to_upload.items():
-                    self._synced_traffic[port] = traffic
+                    self._synced_traffic[port] = stat[port]
 
     def _listen_profile_changes(self):
         # Currently, we just fetch all profiles every 1 minutes.

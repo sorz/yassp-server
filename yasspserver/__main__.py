@@ -37,6 +37,8 @@ def main():
                       print_ss_log=conf.getboolean('ss-server print log'))
 
     yassp = YaSSP(conf['yassp url'], conf['yassp hostname'], conf['yassp psk'], manager)
+    yassp.traffic_sync_threshold = conf.getint('traffic sync threshold')
+    yassp.traffic_sync_timeout = conf.getint('traffic sync timeout')
     signal.signal(signal.SIGTERM, exit)
     signal.signal(signal.SIGHUP, exit)
 

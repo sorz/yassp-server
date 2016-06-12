@@ -62,10 +62,12 @@ class YaSSP():
     def update_profiles(self):
         try:
             profiles = self._get('getport.php', params=dict(act='list'))
-        except (RequestException, AuthenticationError, UnexpectedResponseError, ConnectionError) as e:
+            servers = parse_servers(profiles)
+            logging.debug('Syncing %s profiles (pull)...' % len(profiles))
+        except (RequestException, AuthenticationError, UnexpectedResponseError,
+                ConnectionError, ValueError, KeyError) as e:
             logging.warning('Error on update profiles: %s' % e)
             return
-        logging.debug('Syncing %s profiles (pull)...' % len(profiles))
         self._manager.update(parse_servers(profiles))
 
     def update_traffic(self, force_all=False):

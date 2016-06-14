@@ -19,7 +19,7 @@ class YaSSP():
     def __init__(self, url_prefix, hostname, psk, manager):
         self._running = False
         self._synced_traffic = defaultdict(lambda: 0)
-        self._last_active_time = {}
+        self._earliest_unsynced_time = {}
 
         self._url_prefix = url_prefix
         self._hostname = hostname
@@ -81,17 +81,18 @@ class YaSSP():
                 self._synced_traffic[port] = 0
                 increment = traffic
 
-            if time.time() - self._last_active_time.get(port, 0) > self.traffic_sync_threshold \
+            if port not in self._earliest_unsynced_time:
+                self._earliest_unsynced_time[port] = time.time()
+            if time.time() - self._earliest_unsynced_time[port] > self.traffic_sync_threshold \
                or increment >= self.traffic_sync_threshold \
                or force_all:
                 to_upload[port] = increment
-
-            self._last_active_time[port] = time.time()
 
         if to_upload:
             logging.debug('Uploading traffic (%d)...' % len(to_upload))
             try:
                 to_post = {'update': list(dict(port=p, transfer=t) for p, t in to_upload.items())}
+                logging.debug(to_upload)
                 resp = self._post('getport.php', params=dict(act='updates'), data=json.dumps(to_post))
                 if resp.get('code') != 200:
                     logging.debug(resp)
@@ -101,6 +102,8 @@ class YaSSP():
             else:
                 for port, __ in to_upload.items():
                     self._synced_traffic[port] = stat[port]
+                    if port in self._earliest_unsynced_time:
+                        del self._earliest_unsynced_time[port]
 
     def _listen_profile_changes(self):
         # Currently, we just fetch all profiles every 1 minutes.

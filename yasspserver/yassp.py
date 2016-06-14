@@ -83,7 +83,7 @@ class YaSSP():
 
             if port not in self._earliest_unsynced_time:
                 self._earliest_unsynced_time[port] = time.time()
-            if time.time() - self._earliest_unsynced_time[port] > self.traffic_sync_threshold \
+            if time.time() - self._earliest_unsynced_time[port] > self.traffic_sync_timeout \
                or increment >= self.traffic_sync_threshold \
                or force_all:
                 to_upload[port] = increment

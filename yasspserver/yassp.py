@@ -29,6 +29,8 @@ class YaSSP():
     def _request(self, func, path, **kwargs):
         params = kwargs.pop('params', {})
         params['token'] = self._psk
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = 10
         req = func(urljoin(self._url_prefix, path),
                    params=params,
                    **kwargs)

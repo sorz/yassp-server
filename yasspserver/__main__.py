@@ -6,8 +6,10 @@ import signal
 import logging
 from os.path import isfile
 from configparser import ConfigParser
+from ssmanager import Server
+from ssmanager.sslibev import Manager as ManagerEv
+from ssmanager.sspy import Manager as ManagerPy
 
-from ssmanager import Manager, Server
 from .yassp import YaSSP
 from . import pushserver, utils
 
@@ -33,6 +35,14 @@ def main():
     logging.basicConfig(level=conf.getint('log level'),
                         format='%(asctime)s %(levelname)-s: %(message)s')
     utils.ss_bind_address = conf['ss-server bind']
+    ss_type = conf['ss daemon type']
+    if ss_type == 'libev':
+        Manager = ManagerEv
+    elif ss_type == 'python':
+        Manager = ManagerPy
+    else:
+        logging.critical('Unknown "ss daemon type" %s, must be "libev" or "python"', ss_type)
+        sys.exit(1)
     manager = Manager(ss_bin=conf['ss-server path'],
                       print_ss_log=conf.getboolean('ss-server print log'))
 

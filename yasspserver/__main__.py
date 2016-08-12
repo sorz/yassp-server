@@ -46,7 +46,9 @@ def main():
     manager = Manager(ss_bin=conf['ss-server path'],
                       print_ss_log=conf.getboolean('ss-server print log'))
 
-    yassp = YaSSP(conf['yassp url'], conf['yassp hostname'], conf['yassp psk'], manager)
+    yassp_type = conf.get('yassp type', 'nico')
+    yassp = YaSSP(yassp_type, conf['yassp url'], conf['yassp hostname'],
+                  conf['yassp psk'], manager)
     yassp.traffic_sync_threshold = conf.getint('traffic sync threshold')
     yassp.traffic_sync_timeout = conf.getint('traffic sync timeout')
     signal.signal(signal.SIGTERM, exit)

@@ -115,7 +115,7 @@ class YaSSP():
                     if resp.get('code') != 200:
                         logging.debug(resp)
                         raise UnexpectedResponseError('Code returned by server %s != 200.' % resp.get('code'))
-                elif self.type == 'moyu':
+                elif self._type == 'moyu':
                     self._post('traffics/', data=json.dumps(to_upload))
                 else:
                     raise NotImplementedError()

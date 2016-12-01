@@ -14,5 +14,5 @@ def parse_servers_nico(profiles_json):
             for p in profiles_json)
 
 def parse_servers_moyu(profiles_json):
-    return (Server(**p) for p in profiles_json)
+    return (Server(host=ss_bind_address, **p) for p in profiles_json)
 

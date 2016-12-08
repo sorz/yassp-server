@@ -4,7 +4,7 @@ import bottle
 import json
 import logging
 
-from .utils import parse_servers_moyu
+from .utils import parse_servers
 
 
 token = 'test123'
@@ -23,8 +23,7 @@ def update_instances():
     _check_token()
     profiles = json.load(TextIOWrapper(request.body))
     logging.debug('Syncing %s profiles (push)...' % len(profiles))
-    # TODO: add support for nico
-    manager.update(parse_servers_moyu(profiles))
+    manager.update(parse_servers(profiles))
     response.status = 204
 
 def run(ssmanager, key, *args, **kwargs):

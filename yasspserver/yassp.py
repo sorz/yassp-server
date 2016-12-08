@@ -7,7 +7,7 @@ from threading import Thread
 from collections import defaultdict
 from urllib.parse import urljoin
 
-from .utils import parse_servers_nico, parse_servers_moyu
+from .utils import parse_servers
 
 
 TRAFFIC_CHECK_PERIOD = 30
@@ -16,15 +16,11 @@ class YaSSP():
     traffic_sync_threshold = 100 * 1024 * 1024  # 100 MiB
     traffic_sync_timeout = 60 * 30  # 30 mins
 
-    def __init__(self, yassp_type, url_prefix, hostname, psk, manager):
+    def __init__(self, url_prefix, hostname, psk, manager):
         self._running = False
         self._synced_traffic = defaultdict(lambda: 0)
         self._earliest_unsynced_time = {}
 
-        if yassp_type not in ('nico', 'moyu'):
-            raise KeyError('YaSSP type "%s" is not "nico" or "moyu".' \
-                           % yassp_type)
-        self._type = yassp_type
         self._url_prefix = url_prefix
         self._hostname = hostname
         self._psk = psk
@@ -32,11 +28,7 @@ class YaSSP():
 
     def _request(self, func, path, **kwargs):
         params = kwargs.pop('params', {})
-        if self._type == 'nico':
-            params['token'] = self._psk
-            auth = None
-        else:
-            auth=(self._hostname, self._psk)
+        auth=(self._hostname, self._psk)
         if 'timeout' not in kwargs:
             kwargs['timeout'] = 10
         req = func(urljoin(self._url_prefix, path),
@@ -71,16 +63,8 @@ class YaSSP():
 
     def update_profiles(self):
         try:
-            if self._type == 'nico':
-                profiles = self._get('getport.php', params=dict(act='list'))
-                servers = parse_servers_nico(profiles)
-                self._manager.update(parse_servers_nico(profiles))
-            elif self._type == 'moyu':
-                profiles = self._get('services/')
-                servers = parse_servers_moyu(profiles)
-                self._manager.update(parse_servers_moyu(profiles))
-            else:
-                raise NotImplementedError()
+            profiles = self._get('services/')
+            self._manager.update(parse_servers(profiles))
             logging.debug('Syncing %s profiles (pull)...' % len(profiles))
         except (RequestException, AuthenticationError, UnexpectedResponseError,
                 ConnectionError, ValueError, KeyError) as e:
@@ -109,16 +93,7 @@ class YaSSP():
             logging.debug('Uploading traffic (%d)...' % len(to_upload))
             logging.debug(to_upload)
             try:
-                if self._type == 'nico':
-                    to_post = {'update': list(dict(port=p, transfer=t) for p, t in to_upload.items())}
-                    resp = self._post('getport.php', params=dict(act='updates'), data=json.dumps(to_post))
-                    if resp.get('code') != 200:
-                        logging.debug(resp)
-                        raise UnexpectedResponseError('Code returned by server %s != 200.' % resp.get('code'))
-                elif self._type == 'moyu':
-                    self._post('traffics/', data=json.dumps(to_upload))
-                else:
-                    raise NotImplementedError()
+                self._post('traffics/', data=json.dumps(to_upload))
             except (RequestException, AuthenticationError, UnexpectedResponseError, ConnectionError) as e:
                 logging.warning('Error on upload traffic: %s' % e)
             else:

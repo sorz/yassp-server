@@ -20,6 +20,8 @@ class YaSSP():
         self._running = False
         self._synced_traffic = defaultdict(lambda: 0)
         self._earliest_unsynced_time = {}
+        self._http_last_modified = {}
+        self._http_etag = {}
 
         self._url_prefix = url_prefix
         self._hostname = hostname
@@ -27,18 +29,28 @@ class YaSSP():
         self._manager = manager
 
     def _request(self, func, path, **kwargs):
-        params = kwargs.pop('params', {})
         auth=(self._hostname, self._psk)
         if 'timeout' not in kwargs:
             kwargs['timeout'] = 10
-        req = func(urljoin(self._url_prefix, path),
-                   params=params, auth=auth,
-                   **kwargs)
-        if req.status_code == 403:
+        headers = {}
+        if path in self._http_last_modified:
+            headers['if-modified-since'] = self._http_last_modified[path]
+        if path in self._http_etag:
+            headers['if-none-match'] = self._http_etag[path]
+
+        resp = func(urljoin(self._url_prefix, path),
+                    auth=auth, headers=headers, **kwargs)
+
+        if 'last_modified' in resp.headers:
+            self._http_last_modified[path] = resp.headers['last_modified']
+        if 'etag' in resp.headers:
+            self._http_etag[path] = resp.headers['etag']
+
+        if resp.status_code == 403:
             raise AuthenticationError()
-        elif req.status_code == 200:
-            return req.json()
-        elif req.status_code == 204:
+        elif resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code in (204, 304):
             return
         else:
             raise UnexpectedResponseError()
@@ -64,12 +76,13 @@ class YaSSP():
     def update_profiles(self):
         try:
             profiles = self._get('services/')
-            self._manager.update(parse_servers(profiles))
-            logging.debug('Syncing %s profiles (pull)...' % len(profiles))
         except (RequestException, AuthenticationError, UnexpectedResponseError,
                 ConnectionError, ValueError, KeyError) as e:
             logging.warning('Error on update profiles: %s' % e)
-            return
+        else:
+            if profiles is not None:
+                self._manager.update(parse_servers(profiles))
+                logging.debug('Syncing %s profiles (pull)...' % len(profiles))
 
     def update_traffic(self, force_all=False):
         stat = self._manager.stat()

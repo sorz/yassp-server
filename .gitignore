@@ -1,5 +1,14 @@
 config.cfg
 
+# Debain packaging
+.pybuild
+/debian/files
+/debian/yassp-server
+/debian/debhelper-build-stamp
+/debian/*.debhelper
+/debian/*.substvars
+/debian/*.log
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

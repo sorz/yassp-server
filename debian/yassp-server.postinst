@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+
+USERNAME=yassp-server
+GROUPNAME=yassp-server
+CFG_DIR=/etc/yassp-server
+
+case "$1" in
+	configure|reconfigure)
+		addgroup --system $GROUPNAME
+		adduser --system --no-create-home -ingroup $GROUPNAME $USERNAME
+
+		if [ ! -f $CFG_DIR/example.cfg ]; then
+			mkdir -p $CFG_DIR
+			cp /usr/share/yassp-server/config-example.cfg $CFG_DIR/example.cfg
+			chown -R $USERNAME:$GROUPNAME $CFG_DIR
+			chmod og-rwx $CFG_DIR
+		fi
+		;;
+	abort-upgrade|abort-remove|abort-deconfigure)
+		exit 0
+		;;
+	*)
+		echo "postinst called with unknown argument \`$1'" >&2
+		exit 0
+		;;
+esac
+
+exit 0

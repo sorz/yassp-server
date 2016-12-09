@@ -1,0 +1,15 @@
+[Unit]
+Description=YaSSP Server
+After=network.target
+
+[Service]
+Type=simple
+PrivateTmp=yes
+LimitNOFILE=1048576
+User=yassp-server
+Group=yassp-server
+ExecStart=/usr/bin/yassp-server /etc/yassp-server/%i.cfg
+
+[Install]
+WantedBy=multi-user.target
+

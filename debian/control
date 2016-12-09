@@ -1,0 +1,16 @@
+Source: yassp-server
+Section: python
+Priority: extra
+Maintainer: sorz <yassp@sorz.org>
+Build-Depends: debhelper (>=9),dh-python,dh-systemd,python3-all,python3-setuptools
+Standards-Version: 3.9.6
+Homepage: https://github.com/sorz/yassp-server
+X-Python3-Version: >= 3.2
+Vcs-Git: https://github.com/sorz/yassp-server.git
+Vcs-Browser: https://github.com/sorz/yassp-server
+
+Package: yassp-server
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, python3-requests, python3-ssmanager
+Description: YaSSP-server
+

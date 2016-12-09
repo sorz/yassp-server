@@ -12,6 +12,6 @@ setup(
     [console_scripts]
     yassp-server = yasspserver.__main__:main
     """,
-    install_requires=['requests', 'ssmanager'],
+    install_requires=['requests', 'ssmanager', 'bottle'],
 )
 

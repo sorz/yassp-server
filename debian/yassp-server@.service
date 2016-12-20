@@ -8,6 +8,7 @@ PrivateTmp=yes
 LimitNOFILE=1048576
 User=yassp-server
 Group=yassp-server
+Restart=on-failure
 ExecStart=/usr/bin/yassp-server /etc/yassp-server/%i.cfg
 
 [Install]

@@ -1,3 +1,15 @@
+yassp-server (0.1.0-4) unstable; urgency=medium
+
+  * Multiple sites sharing one config
+
+ --  <xierch@zh1.li>  Tue, 20 Dec 2016 16:59:02 +0800
+
+yassp-server (0.1.0-2) unstable; urgency=medium
+
+  * Change systemd file (restart on failure)
+
+ --  <xierch@zh1.li>  Tue, 20 Dec 2016 16:05:46 +0800
+
 yassp-server (0.1.0-1) unstable; urgency=medium
 
   * Initial release

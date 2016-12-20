@@ -15,16 +15,23 @@ from . import pushserver, utils
 
 
 def get_config():
-    if len(sys.argv) != 2:
-        print('Usage:\n\t%s <PATH-TO-CONFIG-FILE>' % sys.argv[0])
+    if len(sys.argv) not in (2, 3):
+        print('Usage:\n\t%s <CONFIG-FILE> [section-name]' % sys.argv[0],
+              file=sys.stderr)
         sys.exit(1)
     path = sys.argv[1]
+    section = sys.argv[2] if len(sys.argv) > 2 else 'DEFAULT'
     if not isfile(path):
-        print('Error: config file "%s" not exist.' % path)
+        print('Error: config file "%s" not exist.' % path, file=sys.stderr)
         sys.exit(1)
     config = ConfigParser()
     config.read(path)
-    return config['DEFAULT']
+    try:
+        return config[section]
+    except KeyError as e:
+        print('Error: section [%s] not found in config file.' % section, file=sys.stderr)
+        sys.exit(1)
+
 
 def exit(signalnum, frame):
     logging.info('Stopping by SIGTERM/SIGHUP.')
